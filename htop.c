@@ -41,6 +41,7 @@ static void printHelpFlag() {
          "-C --no-color               Use a monochrome color scheme\n"
          "-d --delay=DELAY            Set the delay between updates, in tenths of seconds\n"
          "-h --help                   Print this help screen\n"
+	 "-b --bash                    bash mod\n"
          "-s --sort-key=COLUMN        Sort by COLUMN (try --sort-key=help for a list)\n"
          "-u --user=USERNAME          Show only processes of a given user\n"
          "-p --pid=PID,[,PID,PID...]  Show only the given PIDs\n"
@@ -61,6 +62,8 @@ typedef struct CommandLineSettings_ {
    int sortKey;
    int delay;
    bool useColors;
+   bool batchMode;
+   int iterations;
 } CommandLineSettings;
 
 static CommandLineSettings parseArguments(int argc, char** argv) {
@@ -71,11 +74,15 @@ static CommandLineSettings parseArguments(int argc, char** argv) {
       .sortKey = 0,
       .delay = -1,
       .useColors = true,
+      .batchMode = false,
+      .iterations = 0,
    };
 
    static struct option long_opts[] =
    {
       {"help",     no_argument,         0, 'h'},
+      {"bash",     no_argument,         0, 'b'},
+      {"number",   required_argument,   0, 'n'},
       {"version",  no_argument,         0, 'v'},
       {"delay",    required_argument,   0, 'd'},
       {"sort-key", required_argument,   0, 's'},
@@ -89,11 +96,17 @@ static CommandLineSettings parseArguments(int argc, char** argv) {
 
    int opt, opti=0;
    /* Parse arguments */
-   while ((opt = getopt_long(argc, argv, "hvCs:d:u:p:i", long_opts, &opti))) {
+   while ((opt = getopt_long(argc, argv, "hbvCs:n:d:u:p:i", long_opts, &opti))) {
       if (opt == EOF) break;
       switch (opt) {
          case 'h':
             printHelpFlag();
+            break;
+	 case 'b':
+	    flags.batchMode = true;
+	    break;
+         case 'n':
+            sscanf(optarg, "%d", &(flags.iterations));
             break;
          case 'v':
             printVersionFlag();
@@ -197,7 +210,28 @@ int main(int argc, char** argv) {
       settings->delay = flags.delay;
    if (!flags.useColors) 
       settings->colorScheme = COLORSCHEME_MONOCHROME;
-
+   if(flags.batchMode){
+      int i = 0;
+      while(i<flags.iterations){
+         ProcessList_scan(pl);
+         printf("%llu\n", pl->totalMem);
+         printf("%llu\n", pl->usedMem);
+         printf("%llu\n", pl->freeMem);
+         printf("%llu\n", pl->sharedMem);
+         printf("%llu\n", pl->buffersMem);
+         printf("%llu\n", pl->cachedMem);
+         printf("%llu\n", pl->totalSwap);
+         printf("%llu\n", pl->usedSwap);
+         printf("%llu\n", pl->freeSwap);
+         printf("%d\n", pl->cpuCount);
+         printf("%d\n", pl->totalTasks);
+         printf("%d\n", pl->runningTasks);
+         printf("%d\n", pl->userlandThreads);
+         sleep(2);
+	 i++;
+      }
+      exit(0);
+   }
    CRT_init(settings->delay, settings->colorScheme);
    
    MainPanel* panel = MainPanel_new();
@@ -210,6 +244,7 @@ int main(int argc, char** argv) {
       settings->treeView = false;
       settings->direction = 1;
    }
+  
    ProcessList_printHeader(pl, Panel_getHeader((Panel*)panel));
 
    State state = {
