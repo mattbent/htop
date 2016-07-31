@@ -211,26 +211,23 @@ int main(int argc, char** argv) {
    if (!flags.useColors) 
       settings->colorScheme = COLORSCHEME_MONOCHROME;
    if(flags.batchMode){
-      int i = 0;
-      while(i<flags.iterations){
-         ProcessList_scan(pl);
-         printf("%llu\n", pl->totalMem);
-         printf("%llu\n", pl->usedMem);
-         printf("%llu\n", pl->freeMem);
-         printf("%llu\n", pl->sharedMem);
-         printf("%llu\n", pl->buffersMem);
-         printf("%llu\n", pl->cachedMem);
-         printf("%llu\n", pl->totalSwap);
-         printf("%llu\n", pl->usedSwap);
-         printf("%llu\n", pl->freeSwap);
-         printf("%d\n", pl->cpuCount);
-         printf("%d\n", pl->totalTasks);
-         printf("%d\n", pl->runningTasks);
-         printf("%d\n", pl->userlandThreads);
-         sleep(2);
-	 i++;
+      if(flags.iterations == 0)
+      	while(true){
+            ProcessList_scan(pl);
+	    printf("Tasks: %d total, %d running\nKiB Mem: %llu total, %llu free, %llu used, %llu buffered, %llu cahce\nKiB Swap: %llu total, %llu free, %llu used\n", pl->totalTasks, pl->runningTasks,pl->totalMem, pl->freeMem, pl->usedMem, pl->buffersMem, pl->cachedMem, pl->totalSwap, pl->freeSwap, pl->usedSwap);
+            sleep(2);
+        }
+   
+      else if(flags.iterations > 0){
+        int i = 0;
+        while(i<flags.iterations){
+          ProcessList_scan(pl);
+	  printf("Tasks: %d total, %d running\nKiB Mem: %llu total, %llu free, %llu used, %llu buffered, %llu cahce\nKiB Swap: %llu total, %llu free, %llu used\n", pl->totalTasks, pl->runningTasks,pl->totalMem, pl->freeMem, pl->usedMem, pl->buffersMem, pl->cachedMem, pl->totalSwap, pl->freeSwap, pl->usedSwap);
+          sleep(2);
+	  i++;
+        }
+        exit(0);
       }
-      exit(0);
    }
    CRT_init(settings->delay, settings->colorScheme);
    
